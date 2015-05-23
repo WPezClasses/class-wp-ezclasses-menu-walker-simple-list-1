@@ -83,10 +83,9 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
             $class_names .= ' is-a-child';
         }
 
-		// current menu item
-        if ( in_array( 'current-menu-item', $classes ) ){
+        if ( in_array( 'current-menu-item', $classes_all ) ){
             $class_names .= ' active';
-        } 
+        }
 
         // NOTE: item_class is a special / custom arg and is not part of the standard wp menu fare
         $str_item_class = 'simple-list-li';
