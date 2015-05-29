@@ -16,8 +16,14 @@
  */
  
 /**
- * == Change Log == 
+ * == Change Log ==
  *
+ * == v0.5.1 - Thur 28 May 2015
+ * --- ADDED: Separator (e.g., comma) between list items to mimic a typical taxonomy list (e.g. get_the_category_list())
+ * --- CHANGED: values for is parent and is child classes are now set in the markup_defaults(). they were hardcoded previously.
+ *
+ * == v0.5.0 - Thur 21 May 2015
+ * --- It's on!
  */
  
 /**
@@ -45,6 +51,7 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 	 * @param object $args
 	 */
 
+
     public function start_lvl( &$output, $depth = 0, $args = array() ) {
 
         $output .= '';
@@ -57,8 +64,24 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
         $output .= '';
 
     }
-	
+
+    /**
+     * @param string $output
+     * @param object $item
+     * @param int $depth
+     * @param array $args
+     * @param int $id
+     */
 	public function start_el(&$output, $item, $depth = 0, $args = array(), $id = 0 ){
+
+        // where does the args obj interset the markup_defaults
+        $arr_markup_defaults = array_intersect_key((array) $args, $this->markup_defaults() );
+        // merge that intersection onto the markup defaults
+        $arr_markup_defaults = array_merge($this->markup_defaults(), $arr_markup_defaults );
+
+        // how many total elements in this list
+        $int_ele_cnt = $this->elements_count($args);
+
 
         $indent = ($depth) ? str_repeat("\t", $depth) : '';
 
@@ -71,16 +94,16 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 
         // has children?
         if ($args->walker->has_children) {
-            $class_names .= ' parent has-children';
+            $class_names .= ' ' .  $arr_markup_defaults['parent'];
         } else {
-            $class_names.= ' not-parent no-children';
+            $class_names .= ' ' .  $arr_markup_defaults['not_parent'];
         }
 
         // is a child?
         if ( $item->menu_item_parent == 0 ){
-            $class_names .= ' not-a-child';
+            $class_names .= ' ' . $arr_markup_defaults['not_child'];
         } else{
-            $class_names .= ' is-a-child';
+            $class_names .= ' ' . $arr_markup_defaults['child'];
         }
 
         if ( in_array( 'current-menu-item', $classes_all ) ){
@@ -137,34 +160,59 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 
         $atts['href'] = ! empty( $item->url ) ? $item->url : '';
 
-			$atts = apply_filters( 'nav_menu_link_attributes', $atts, $item, $args );
+		$atts = apply_filters( 'nav_menu_link_attributes', $atts, $item, $args );
 
-			$attributes = '';
-			foreach ( $atts as $attr => $value ) {
-				if ( ! empty( $value ) ) {
-					$value = ( 'href' === $attr ) ? esc_url( $value ) : esc_attr( $value );
-					$attributes .= ' ' . $attr . '="' . $value . '"';
-				}
+		$attributes = '';
+		foreach ( $atts as $attr => $value ) {
+			if ( ! empty( $value ) ) {
+				$value = ( 'href' === $attr ) ? esc_url( $value ) : esc_attr( $value );
+				$attributes .= ' ' . $attr . '="' . $value . '"';
 			}
+		}
 
-			$item_output = $args->before;
 
-			$item_output .= '<a '. $attributes .'>';
+        // what's up with the delimiter / separator?
+        $str_delimit_in = '';
+        $str_delimit_out = '';
+        if ( $arr_markup_defaults['separator_active'] === true && $item->menu_order < $int_ele_cnt ){
+            $str_delimit_temp = '<span class="' . esc_attr($arr_markup_defaults['separator_class']). '">';
+            $str_delimit_temp .= sanitize_text_field($arr_markup_defaults['separator']);
+            $str_delimit_temp .= '</span>';
 
-			$item_output .= $args->link_before . apply_filters( 'the_title', $item->title, $item->ID ) . $args->link_after;
+            if ( $arr_markup_defaults['separator_outside'] === true ){
+                $str_delimit_out = $str_delimit_temp;
+            } else {
+                $str_delimit_in = $str_delimit_temp;
+            }
+        }
+
+		$item_output = $args->before;
+
+		$item_output .= '<a '. $attributes .'>';
+
+		$item_output .= $args->link_before . apply_filters( 'the_title', $item->title, $item->ID ) . $args->link_after;
 		//	$item_output .= ( $args->has_children && 0 === $depth ) ? ' <span class="caret"></span></a>' : '</a>';
-			$item_output .= '</a>';
+		$item_output .= $str_delimit_in . '</a>' . $str_delimit_out;
 
-			$item_output .= $args->after;
+		$item_output .= $args->after;
 
-			$output .=  apply_filters( 'walker_nav_menu_start_el', $item_output, $item, $depth, $args );
+		$output .=  apply_filters( 'walker_nav_menu_start_el', $item_output, $item, $depth, $args );
 	}
-	
+
+    /**
+     * @param string $output
+     * @param object $item
+     * @param int $depth
+     * @param array $args
+     */
 	public function end_el(&$output, $item, $depth=0, $args=array()) {
         $output .= '</' . $this->_str_item_tag . '>'. "\n";
     }
 
-    public function valid_item_tags(){
+    /**
+     * @return array
+     */
+    protected function valid_item_tags(){
 
         return array(
             'li'    => true,
@@ -172,7 +220,49 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
             'div'   => true,
 
         );
+    }
 
+    /**
+     * @return array
+     */
+    protected function markup_defaults(){
+
+        $arr_markup_defaults = array(
+
+            'parent'            => 'is-parent',
+            'not_parent'        => 'not-parent',
+            'child'             => 'is-child',
+            'not_child'         => 'not-child',
+
+            'separator_active'  => true,
+            'separator_outside' => true,    // is the delimited within the </a> or outside?
+            'separator_class'   => 'simple-list-1-delimiter-wrap',
+            'separator'         => ','
+
+            //   'title_prefix'      => '',
+            //  'target_default'    => '_blank',
+        );
+
+        return $arr_markup_defaults;
+    }
+
+
+    /**
+     * Total number of elements in this menu list
+     * 
+     * @param $obj_args
+     * @return int
+     */
+    public function elements_count($obj_args){
+
+        $arr_nav_menus = get_theme_mod( 'nav_menu_locations' );
+
+        if (  isset($arr_nav_menus[$obj_args->menu]) ){
+
+            $arr_nav_menu_elements = wp_get_nav_menu_items($arr_nav_menus[$obj_args->menu]);
+            return count($arr_nav_menu_elements);
+        }
+        return 0;
     }
 
 }
