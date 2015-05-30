@@ -2,8 +2,8 @@
 /**
  * Class Name: Class_WP_ezClasses_Menu_Walker_Simple_List_1
  * GitHub URI: https://github.com/WPezClasses/class-wp-ezclasses-menu-walker-simple-list-1
- * Description: Take a menu and generates a simple list of <li>s. Parents and children are noted as classes but _el is not implemented.
- * Version: 0.5.0
+ * Description:A WP Menu Walker that generates a simple list of <li>s, <span>s or <div>s. Parents and children are noted with classes but start_lvl / end_lvl add nothing.
+ * Version: 0.5.2
  * Author: 
  * License: MIT
  * License URI: TODO
@@ -17,6 +17,10 @@
  
 /**
  * == Change Log ==
+ *
+ * == v0.5.2 - Fri 29 May 2015
+ * --- ADDED: item_* to the markup defaults
+ * --- ADDED: is_child_of to the markup defaults
  *
  * == v0.5.1 - Thur 28 May 2015
  * --- ADDED: Separator (e.g., comma) between list items to mimic a typical taxonomy list (e.g. get_the_category_list())
@@ -50,6 +54,34 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 	 * @param int $current_page Menu item ID.
 	 * @param object $args
 	 */
+
+    /**
+     * @return array
+     */
+    protected function markup_defaults(){
+
+        $arr_markup_defaults = array(
+
+            'item_tag'          => 'li',                    // what tag will rap a given item. see also method: valid_item_tags()
+            'item_id_slug'      => 'simple-list-1-item-',
+            'item_class'        => 'simple-list-1-item',
+
+            'parent'            => 'is-parent',         // a given item can be assigned parent and child classes in case you need a bit more than uber simple
+            'not_parent'        => 'not-parent',
+            'child'             => 'is-child',
+            'child_of'          => 'is-child-of-',
+            'not_child'         => 'not-child',
+
+            'separator_active'  => true,                            // on / off switch for using the separator
+            'separator_outside' => true,                            // is the separator within the </a> or outside?
+            'separator_class'   => 'simple-list-1-delimiter-wrap',  // assign a class to the separator
+            'separator'         => ','                              // what is the separator? the default is ',' (comma)
+
+            //   'title_prefix'      => '',
+            //  'target_default'    => '_blank',
+        );
+        return $arr_markup_defaults;
+    }
 
 
     public function start_lvl( &$output, $depth = 0, $args = array() ) {
@@ -104,6 +136,7 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
             $class_names .= ' ' . $arr_markup_defaults['not_child'];
         } else{
             $class_names .= ' ' . $arr_markup_defaults['child'];
+            $class_names .= ' ' . esc_attr($arr_markup_defaults['child_of'] . $item->menu_item_parent);
         }
 
         if ( in_array( 'current-menu-item', $classes_all ) ){
@@ -112,45 +145,44 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 
         // NOTE: item_class is a special / custom arg and is not part of the standard wp menu fare
         $str_item_class = 'simple-list-li';
-        if (isset($args->item_class) && ! empty($args->item_class) && $args->item_class !== false ){
-            $str_item_class = esc_attr($args->item_class);
+        if ( isset($arr_markup_defaults['item_class']) && ! empty($arr_markup_defaults['item_class']) && $arr_markup_defaults['item_class'] !== false ){
+            $str_item_class = esc_attr($arr_markup_defaults['item_class']);
         }
 
 		$class_names = $class_names ? ' class="' . $str_item_class. ' ' . esc_attr( $class_names ) . '"' :  ' class="' . $str_item_class . '"';
 
-        // if item_class === false then don't use class
-        if (isset($args->item_class) && $args->item_class === false ){
+        // if item_class === false then don't use class="..." at all
+        if ( isset($arr_markup_defaults['item_class']) && $arr_markup_defaults['item_class'] === false ){
             $class_names = '';
         }
 
-        // fallback for id_slug
-        $str_id_slug = 'simple-list-li-';
-        if (isset($args->menu_id) && ! empty($args->menu_id) ){
-            $str_id_slug = $args->menu_id . '-';
+        // baseline for id_slug
+        $str_id_slug = 'simple-list-1-item';
+        if ( isset($args->menu_id) && ! empty($args->menu_id) ){
+            $str_id_slug = $args->menu_id . '-item-';
         }
         // NOTE: item_id_slug is a special / custom arg and is not part of the standard wp menu fare
-        if (isset($args->item_id_slug) && ! empty($args->item_id_slug) && $args->item_id_slug !== false ){
-            $str_id_slug = $args->item_id_slug;
+        if ( isset($arr_markup_defaults['item_id_slug']) && ! empty($arr_markup_defaults['item_id_slug']) && $arr_markup_defaults['item_id_slug'] !== false ){
+            $str_id_slug = $arr_markup_defaults['item_id_slug'];
         }
 
 		$id = apply_filters( 'nav_menu_item_id', $str_id_slug . $item->ID, $item, $args );
 		$id = $id ? $indent . esc_attr( $id ) . '"' : '';
 
         // if item_id_slug === false then we don't use the id at all.
-        if (isset($args->item_id_slug) && $args->item_id_slug === false ){
+        if ( isset($arr_markup_defaults['item_id_slug']) && $arr_markup_defaults['item_id_slug'] === false ){
             $id = '';
         }
 
         $arr_valid_item_tags = $this->valid_item_tags();
 
         // NOTE: item_tag is a special / custom arg and is not part of the standard wp menu fare
-        $this->_str_item_tag = 'li';
+        $this->_str_item_tag = $arr_markup_defaults['item_tag'];
         if ( isset($args->item_tag) && in_array($args->item_tag, $arr_valid_item_tags) ){
             $this->_str_item_tag = $args->item_tag;
-
         }
 
-		$output .=  $indent . '<' . $this->_str_item_tag . ' ' . $id . $value . $class_names .'>';
+		$output .=  $indent . '<' . esc_attr($this->_str_item_tag) . ' ' . $id . $value . $class_names .'>';
 
 		$atts = array();
 		$atts['title']  = ! empty( $item->attr_title ) ? $item->attr_title : '';
@@ -206,7 +238,7 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
      * @param array $args
      */
 	public function end_el(&$output, $item, $depth=0, $args=array()) {
-        $output .= '</' . $this->_str_item_tag . '>'. "\n";
+        $output .= '</' . esc_attr($arr_markup_defaults['item_tag']) . '>'. "\n";
     }
 
     /**
@@ -220,30 +252,6 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
             'div'   => true,
 
         );
-    }
-
-    /**
-     * @return array
-     */
-    protected function markup_defaults(){
-
-        $arr_markup_defaults = array(
-
-            'parent'            => 'is-parent',
-            'not_parent'        => 'not-parent',
-            'child'             => 'is-child',
-            'not_child'         => 'not-child',
-
-            'separator_active'  => true,
-            'separator_outside' => true,    // is the delimited within the </a> or outside?
-            'separator_class'   => 'simple-list-1-delimiter-wrap',
-            'separator'         => ','
-
-            //   'title_prefix'      => '',
-            //  'target_default'    => '_blank',
-        );
-
-        return $arr_markup_defaults;
     }
 
 
