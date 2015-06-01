@@ -1,7 +1,7 @@
 # Class_WP_ezClasses_Menu_Walker_Simple_List_1
 A product of WPezClasses (https://github.com/WPezClasses)
 
-##### Use wp_nav_menu() to generate a simple list. Adds a couple custom ez args because that's The ezWay.
+##### Use wp_nav_menu() to generate a simple list. Adds a handful of custom ez_args because that's The ezWay.
 
 
 =======================================================================================
@@ -9,7 +9,7 @@ A product of WPezClasses (https://github.com/WPezClasses)
 #### WPezClasses: Getting Started
 - https://github.com/WPezClasses/wp-ezclasses-docs-getting-started
 
-Note: Simple List 1 doesn't require the standard ez parent. But the Getting Start is still worth reviewing.
+Note: Simple List 1 doesn't extend the standard ez parent class. But the Getting Start is still worth reviewing.
 
 =======================================================================================
 
@@ -36,9 +36,11 @@ https://codex.wordpress.org/Class_Reference/Walker_Nav_Menu
 =======================================================================================
 
 
-#### Doin' it...The ezWay
+#### The ez_args
 
-These are the additional args unique to Menu Walker: Simple List 1. They can be changed by extending this class (see method: markup_defaults()) or just pass them in as part of the standard array of args for your wp_nav_menu().
+Doin' it...The ezWay.
+
+These are the additional args unique to Walker Nav Menu: Simple List 1. They can be changed by extending this class (see method: ez_args_defaults()) or just pass them in (as an array with key 'ez_args') as part of the standard array of args for your wp_nav_menu().
 
 ###### 'item_tag'
  - What HTML tag will rap a given item. See also method: valid_item_tags() for the other values currently allowed.
@@ -78,7 +80,7 @@ These are the additional args unique to Menu Walker: Simple List 1. They can be 
  - Default: true
 
 ###### 'separator_outside'
- - Is the separator within the </a> or outside?
+ - Is the separator within the closing of the a tag or outside?
  - Default: true
 
 ###### 'separator_class'
@@ -97,7 +99,6 @@ These are the additional args unique to Menu Walker: Simple List 1. They can be 
 ```
 $arr_menu_args = array(
 
-  'active'          => true,
   'description'     => 'Blog Category List',
   'theme_location'  => 'blog_category',
   'menu'            => 'blog_category',
@@ -107,14 +108,17 @@ $arr_menu_args = array(
   'menu_id'         => 'blog-category-list',
   'menu_class'      => 'simple-list-1-ul',
   'items_wrap'      => '<ul id="%1$s" class="%2$s" role="listbox">%3$s</ul>',
-
-  'item_tag'        => 'li',
-  'item_id_slug'    => 'blog-menu-cat-id-',
-  'item_class'      => 'blog-menu-item',
-
   'echo'            => false,
   'fallback_cb'     => false,
   'walker'          => new Class_WP_ezClasses_Menu_Walker_Simple_List_1()
+
+  // Simple List 1 args:
+  'ez_args'         => array(
+    'item_tag'        => 'li',
+    'item_id_slug'    => 'blog-menu-cat-id-',
+    'item_class'      => 'blog-menu-item'
+  ),
+
 
 );
 
@@ -122,6 +126,6 @@ $arr_menu_args = array(
 
 =======================================================================================
 
- #### Other WPezClasses you might be interested in
+#### Other WPezClasses you might be interested in
 
  TODO

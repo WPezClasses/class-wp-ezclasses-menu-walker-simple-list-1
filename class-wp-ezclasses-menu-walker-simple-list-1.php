@@ -3,7 +3,7 @@
  * Class Name: Class_WP_ezClasses_Menu_Walker_Simple_List_1
  * GitHub URI: https://github.com/WPezClasses/class-wp-ezclasses-menu-walker-simple-list-1
  * Description: A WP Menu Walker that generates a simple list of <li>s, <span>s or <div>s. Parents and children are noted with classes but start_lvl / end_lvl add nothing.
- * Version: 0.5.2
+ * Version: 0.5.3
  * Author: 
  * License: MIT
  * License URI: TODO
@@ -18,13 +18,16 @@
 /**
  * == Change Log ==
  *
+ * == v0.5.3 - Mon 1 June 2015
+ * --- ADDED: ez_args as a key / property of the standard menu args, all the ez-centric args are consolidated in that array ('ez_args' => array(...))
+ *
  * == v0.5.2 - Fri 29 May 2015
  * --- ADDED: item_* to the markup defaults
  * --- ADDED: is_child_of to the markup defaults
  *
  * == v0.5.1 - Thur 28 May 2015
  * --- ADDED: Separator (e.g., comma) between list items to mimic a typical taxonomy list (e.g. get_the_category_list())
- * --- CHANGED: values for is parent and is child classes are now set in the markup_defaults(). they were hardcoded previously.
+ * --- CHANGED: values for is parent and is child classes are now set in the ez_args_defaults(). they were hardcoded previously.
  *
  * == v0.5.0 - Thur 21 May 2015
  * --- It's on!
@@ -47,7 +50,7 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
     /**
      * @var
      */
-    protected $_arr_markup_defaults;
+    protected $_arr_ez_args_defaults;
 
 
 
@@ -57,13 +60,14 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
      * @return array
      *
      */
-    protected function markup_defaults(){
+    protected function ez_args_defaults(){
 
-        $arr_markup_defaults = array(
+        $arr_ez_args_defaults = array(
 
             'item_tag'          => 'li',                            // what tag will rap a given item. see also method: valid_item_tags()
             'item_id_slug'      => 'simple-list-1-item-',
             'item_class'        => 'simple-list-1-item',
+            'active_class'      => 'active',
 
             'parent'            => 'is-parent',                     // a given item can be assigned parent and child classes in case you need a bit more than uber simple
             'not_parent'        => 'not-parent',
@@ -79,7 +83,7 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
             //   'title_prefix'      => '',
             //  'target_default'    => '_blank',
         );
-        return $arr_markup_defaults;
+        return $arr_ez_args_defaults;
     }
 
     /**
@@ -119,13 +123,13 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
      */
 	public function start_el(&$output, $item, $depth = 0, $args = array(), $id = 0 ){
 
-        // where does the args obj intersect the markup_defaults
-        $arr_markup_defaults = array_intersect_key((array) $args, $this->markup_defaults() );
-        // merge that intersection onto the markup defaults
-        $arr_markup_defaults = array_merge($this->markup_defaults(), $arr_markup_defaults );
+        $arr_ez_args_defaults = $this->ez_args_defaults();
+        if ( isset($args->ez_args) && is_array($args->ez_args) ){
+            $arr_ez_args_defaults = array_merge($arr_ez_args_defaults, $args->ez_args );
+        }
 
         // the property keeps the end_el() informed.
-        $this->_arr_markup_defaults = $arr_markup_defaults;
+        $this->_arr_ez_args_defaults = $arr_ez_args_defaults;
 
         // how many total elements in this list
         $int_ele_cnt = $this->elements_count($args);
@@ -140,33 +144,33 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 
         // has children?
         if ($args->walker->has_children) {
-            $class_names .= ' ' .  $arr_markup_defaults['parent'];
+            $class_names .= ' ' .  $arr_ez_args_defaults['parent'];
         } else {
-            $class_names .= ' ' .  $arr_markup_defaults['not_parent'];
+            $class_names .= ' ' .  $arr_ez_args_defaults['not_parent'];
         }
 
         // is a child?
         if ( $item->menu_item_parent == 0 ){
-            $class_names .= ' ' . $arr_markup_defaults['not_child'];
+            $class_names .= ' ' . $arr_ez_args_defaults['not_child'];
         } else{
-            $class_names .= ' ' . $arr_markup_defaults['child'];
-            $class_names .= ' ' . $arr_markup_defaults['child_of'] . $item->menu_item_parent;
+            $class_names .= ' ' . $arr_ez_args_defaults['child'];
+            $class_names .= ' ' . $arr_ez_args_defaults['child_of'] . $item->menu_item_parent;
         }
 
         if ( in_array( 'current-menu-item', $classes_all ) ){
-            $class_names .= ' active';
+            $class_names .= ' ' .  $arr_ez_args_defaults['active_class'];
         }
 
         // NOTE: item_class is a special / custom arg and is not part of the standard wp menu fare
         $str_item_class = 'simple-list-li';
-        if ( isset($arr_markup_defaults['item_class']) && ! empty($arr_markup_defaults['item_class']) && $arr_markup_defaults['item_class'] !== false ){
-            $str_item_class = esc_attr($arr_markup_defaults['item_class']);
+        if ( isset($arr_ez_args_defaults['item_class']) && ! empty($arr_ez_args_defaults['item_class']) && $arr_ez_args_defaults['item_class'] !== false ){
+            $str_item_class = esc_attr($arr_ez_args_defaults['item_class']);
         }
 
 		$class_names = $class_names ? ' class="' . $str_item_class. ' ' . esc_attr( $class_names ) . '"' :  ' class="' . $str_item_class . '"';
 
         // if item_class === false then don't use class="..." at all
-        if ( isset($arr_markup_defaults['item_class']) && $arr_markup_defaults['item_class'] === false ){
+        if ( isset($arr_ez_args_defaults['item_class']) && $arr_ez_args_defaults['item_class'] === false ){
             $class_names = '';
         }
 
@@ -176,27 +180,27 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
             $str_id_slug = $args->menu_id . '-item-';
         }
         // NOTE: item_id_slug is a special / custom arg and is not part of the standard wp menu fare
-        if ( isset($arr_markup_defaults['item_id_slug']) && ! empty($arr_markup_defaults['item_id_slug']) && $arr_markup_defaults['item_id_slug'] !== false ){
-            $str_id_slug = $arr_markup_defaults['item_id_slug'];
+        if ( isset($arr_ez_args_defaults['item_id_slug']) && ! empty($arr_ez_args_defaults['item_id_slug']) && $arr_ez_args_defaults['item_id_slug'] !== false ){
+            $str_id_slug = $arr_ez_args_defaults['item_id_slug'];
         }
 
 		$id = apply_filters( 'nav_menu_item_id', $str_id_slug . $item->ID, $item, $args );
 		$id = $id ? $indent . esc_attr( $id ) . '"' : '';
 
         // if item_id_slug === false then we don't use the id at all.
-        if ( isset($arr_markup_defaults['item_id_slug']) && $arr_markup_defaults['item_id_slug'] === false ){
+        if ( isset($arr_ez_args_defaults['item_id_slug']) && $arr_ez_args_defaults['item_id_slug'] === false ){
             $id = '';
         }
 
         $arr_valid_item_tags = $this->valid_item_tags();
-        // perhaps the tag passed in via the args isn't legit, then use the markup_defaults item_tag
-        if ( ! isset($arr_valid_item_tags[$arr_markup_defaults['item_tag']] ) || $arr_valid_item_tags[$arr_markup_defaults['item_tag']] !== true ){
-            $arr_markup_defaults['item_tag'] = $this->markup_defaults()['item_tag'];
+        // perhaps the tag passed in via the args isn't legit, then use the ez_args_defaults item_tag
+        if ( ! isset($arr_valid_item_tags[$arr_ez_args_defaults['item_tag']] ) || $arr_valid_item_tags[$arr_ez_args_defaults['item_tag']] !== true ){
+            $arr_ez_args_defaults['item_tag'] = $this->ez_args_defaults()['item_tag'];
             // update the property so the end_el knows whats up
-            $this->_arr_markup_defaults['item_tag'] = $this->markup_defaults()['item_tag'];
+            $this->_arr_ez_args_defaults['item_tag'] = $this->ez_args_defaults()['item_tag'];
         }
 
-		$output .=  $indent . '<' . esc_attr($arr_markup_defaults['item_tag']) . ' ' . $id . $value . $class_names .'>';
+		$output .=  $indent . '<' . esc_attr($arr_ez_args_defaults['item_tag']) . ' ' . $id . $value . $class_names .'>';
 
 		$atts = array();
 		$atts['title']  = ! empty( $item->attr_title ) ? $item->attr_title : '';
@@ -220,12 +224,12 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
         // what's up with the delimiter / separator?
         $str_delimit_in = '';
         $str_delimit_out = '';
-        if ( $arr_markup_defaults['separator_active'] === true && $item->menu_order < $int_ele_cnt ){
-            $str_delimit_temp = '<span class="' . esc_attr($arr_markup_defaults['separator_class']). '">';
-            $str_delimit_temp .= sanitize_text_field($arr_markup_defaults['separator']);
+        if ( $arr_ez_args_defaults['separator_active'] === true && $item->menu_order < $int_ele_cnt ){
+            $str_delimit_temp = '<span class="' . esc_attr($arr_ez_args_defaults['separator_class']). '">';
+            $str_delimit_temp .= sanitize_text_field($arr_ez_args_defaults['separator']);
             $str_delimit_temp .= '</span>';
 
-            if ( $arr_markup_defaults['separator_outside'] === true ){
+            if ( $arr_ez_args_defaults['separator_outside'] === true ){
                 $str_delimit_out = $str_delimit_temp;
             } else {
                 $str_delimit_in = $str_delimit_temp;
@@ -253,8 +257,8 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
      */
 	public function end_el(&$output, $item, $depth=0, $args=array()) {
 
-        $arr_markup_defaults = $this->_arr_markup_defaults;
-        $output .= '</' . esc_attr($arr_markup_defaults['item_tag']) . '>'. "\n";
+        $arr_ez_args_defaults = $this->_arr_ez_args_defaults;
+        $output .= '</' . esc_attr($arr_ez_args_defaults['item_tag']) . '>'. "\n";
     }
 
     /**
