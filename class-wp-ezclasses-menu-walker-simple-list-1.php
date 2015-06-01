@@ -52,6 +52,11 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
      */
     protected $_arr_ez_args_defaults;
 
+    /**
+     * @var
+     */
+    protected $_str_item_tag;
+
 
 
     /**
@@ -194,13 +199,12 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 
         $arr_valid_item_tags = $this->valid_item_tags();
         // perhaps the tag passed in via the args isn't legit, then use the ez_args_defaults item_tag
-        if ( ! isset($arr_valid_item_tags[$arr_ez_args_defaults['item_tag']] ) || $arr_valid_item_tags[$arr_ez_args_defaults['item_tag']] !== true ){
-            $arr_ez_args_defaults['item_tag'] = $this->ez_args_defaults()['item_tag'];
-            // update the property so the end_el knows whats up
-            $this->_arr_ez_args_defaults['item_tag'] = $this->ez_args_defaults()['item_tag'];
+        $this->_str_item_tag = 'li';
+        if ( isset($arr_ez_args_defaults['item_tag']) &&  isset($arr_valid_item_tags[$arr_ez_args_defaults['item_tag']]) && $arr_valid_item_tags[$arr_ez_args_defaults['item_tag']] === true ){
+            $this->_str_item_tag = $arr_ez_args_defaults['item_tag'];
         }
 
-		$output .=  $indent . '<' . esc_attr($arr_ez_args_defaults['item_tag']) . ' ' . $id . $value . $class_names .'>';
+		$output .=  $indent . '<' . esc_attr($this->_str_item_tag) . ' ' . $id . $value . $class_names .'>';
 
 		$atts = array();
 		$atts['title']  = ! empty( $item->attr_title ) ? $item->attr_title : '';
@@ -258,7 +262,7 @@ class Class_WP_ezClasses_Menu_Walker_Simple_List_1 extends Walker_Nav_Menu {
 	public function end_el(&$output, $item, $depth=0, $args=array()) {
 
         $arr_ez_args_defaults = $this->_arr_ez_args_defaults;
-        $output .= '</' . esc_attr($arr_ez_args_defaults['item_tag']) . '>'. "\n";
+        $output .= '</' . esc_attr($this->_str_item_tag) . '>'. "\n";
     }
 
     /**
